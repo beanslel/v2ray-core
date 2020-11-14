@@ -5,6 +5,7 @@ import (
 
 	"v2ray.com/core"
 	"v2ray.com/core/app/proxyman"
+	"v2ray.com/core/app/router"
 	"v2ray.com/core/common"
 	"v2ray.com/core/common/mux"
 	"v2ray.com/core/common/net"
@@ -51,6 +52,7 @@ type Handler struct {
 	streamSettings  *internet.MemoryStreamConfig
 	proxy           proxy.Outbound
 	outboundManager outbound.Manager
+	balancerManager router.BalancerManager
 	mux             *mux.ClientManager
 	uplinkCounter   stats.Counter
 	downlinkCounter stats.Counter
@@ -63,6 +65,7 @@ func NewHandler(ctx context.Context, config *core.OutboundHandlerConfig) (outbou
 	h := &Handler{
 		tag:             config.Tag,
 		outboundManager: v.GetFeature(outbound.ManagerType()).(outbound.Manager),
+		balancerManager: router.NewBalancerManager(),
 		uplinkCounter:   uplinkCounter,
 		downlinkCounter: downlinkCounter,
 	}
@@ -135,12 +138,14 @@ func (h *Handler) Dispatch(ctx context.Context, link *transport.Link) {
 		if err := h.mux.Dispatch(ctx, link); err != nil {
 			newError("failed to process mux outbound traffic").Base(err).WriteToLog(session.ExportIDToError(ctx))
 			common.Interrupt(link.Writer)
+			h.balancerManager.Fallback.AddFailedAttempts()
 		}
 	} else {
 		if err := h.proxy.Process(ctx, link, h); err != nil {
 			// Ensure outbound ray is properly closed.
 			newError("failed to process outbound traffic").Base(err).WriteToLog(session.ExportIDToError(ctx))
 			common.Interrupt(link.Writer)
+			h.balancerManager.Fallback.AddFailedAttempts()
 		} else {
 			common.Must(common.Close(link.Writer))
 		}
