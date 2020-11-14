@@ -3,24 +3,11 @@
 package router
 
 import (
-	"v2ray.com/core/common/dice"
 	"v2ray.com/core/features/outbound"
 )
 
 type BalancingStrategy interface {
 	PickOutbound([]string) string
-}
-
-type RandomStrategy struct {
-}
-
-func (s *RandomStrategy) PickOutbound(tags []string) string {
-	n := len(tags)
-	if n == 0 {
-		panic("0 tags")
-	}
-
-	return tags[dice.Roll(n)]
 }
 
 type Balancer struct {
