@@ -24,7 +24,6 @@ type FallbackStrategy struct {
 }
 
 type FallbackManager struct {
-	tags           []string
 	curIndex       int
 	maxAttempts    int64
 	failedAttempts int64
@@ -53,7 +52,6 @@ func NewRandomManager() *RandomManager {
 // NewFallbackManager returns a new instance of FallbackManager
 func NewFallbackManager(maxAttempts int64) *FallbackManager {
 	return &FallbackManager{
-		tags:           nil,
 		curIndex:       0,
 		failedAttempts: int64(0),
 		maxAttempts:    maxAttempts,
@@ -77,15 +75,12 @@ func (m *FallbackManager) AddFailedAttempts() int64 {
 
 // PickOutbound picks an outbound with fallback strategy
 func (m *FallbackManager) PickOutbound(tags []string) string {
-	if m.tags == nil {
-		m.tags = tags
-	}
 	if m.failedAttempts > m.maxAttempts {
 		m.ResetFailedAttempts()
-		m.curIndex = (m.curIndex + 1) % len(m.tags)
-		newError("balancer: switched to fallback " + m.tags[m.curIndex]).AtInfo().WriteToLog()
+		m.curIndex = (m.curIndex + 1) % len(tags)
+		newError("balancer: switched to fallback " + tags[m.curIndex]).AtInfo().WriteToLog()
 	}
-	return m.tags[m.curIndex]
+	return tags[m.curIndex]
 }
 
 func (m *RandomManager) PickOutbound(tags []string) string {
