@@ -148,9 +148,19 @@ func (rr *RoutingRule) BuildCondition() (Condition, error) {
 }
 
 func (br *BalancingRule) Build(ohm outbound.Manager) (*Balancer, error) {
-	return &Balancer{
-		selectors: br.OutboundSelector,
-		strategy:  NewBalancerManager().Fallback,
-		ohm:       ohm,
-	}, nil
+	switch br.BalancingSettings.Strategy {
+	case BalancingSettings_Fallback:
+		return &Balancer{
+			selectors: br.OutboundSelector,
+			strategy:  NewFallbackStrategy(br.StrategySettings.MaxAttempts),
+			ohm:       ohm,
+		}, nil
+	case BalancingSettings_Random:
+		return &Balancer{
+			selectors: br.OutboundSelector,
+			strategy:  NewRandomStrategy(),
+			ohm:       ohm,
+		}, nil
+	}
+	return nil, nil
 }
