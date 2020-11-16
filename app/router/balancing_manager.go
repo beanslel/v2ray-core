@@ -29,7 +29,7 @@ type FallbackManager struct {
 	failedAttempts int64
 }
 
-const defaultMaxAttempts = 10
+const defaultMaxAttempts = 30
 
 // temp and will removed
 var balancerManager BalancerManager
