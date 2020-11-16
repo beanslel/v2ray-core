@@ -59,28 +59,40 @@ func NewFallbackManager(maxAttempts int64) *FallbackManager {
 }
 
 // GetFailedAttempts implements outbound.FailedAttemptsRecorder
-func (m *FallbackManager) GetFailedAttempts() int64 {
+func (m *FallbackManager) getFailedAttempts() int64 {
 	return atomic.LoadInt64(&m.failedAttempts)
+}
+func (m *FallbackManager) GetFailedAttempts() int64 {
+	return balancerManager.Fallback.getFailedAttempts()
 }
 
 // ResetFailedAttempts implements outbound.FailedAttemptsRecorder
-func (m *FallbackManager) ResetFailedAttempts() int64 {
+func (m *FallbackManager) resetFailedAttempts() int64 {
 	return atomic.SwapInt64(&m.failedAttempts, int64(0))
+}
+func (m *FallbackManager) ResetFailedAttempts() int64 {
+	return balancerManager.Fallback.resetFailedAttempts()
 }
 
 // AddFailedAttempts implements outbound.FailedAttemptsRecorder
-func (m *FallbackManager) AddFailedAttempts() int64 {
+func (m *FallbackManager) addFailedAttempts() int64 {
 	return atomic.AddInt64(&m.failedAttempts, int64(1))
+}
+func (m *FallbackManager) AddFailedAttempts() int64 {
+	return balancerManager.Fallback.addFailedAttempts()
 }
 
 // PickOutbound picks an outbound with fallback strategy
-func (m *FallbackManager) PickOutbound(tags []string) string {
+func (m *FallbackManager) pickOutbound(tags []string) string {
 	if m.failedAttempts > m.maxAttempts {
 		m.ResetFailedAttempts()
 		m.curIndex = (m.curIndex + 1) % len(tags)
 		newError("balancer: switched to fallback " + tags[m.curIndex]).AtInfo().WriteToLog()
 	}
 	return tags[m.curIndex]
+}
+func (m *FallbackManager) PickOutbound(tags []string) string {
+	return balancerManager.Fallback.pickOutbound(tags)
 }
 
 func (m *RandomManager) PickOutbound(tags []string) string {
