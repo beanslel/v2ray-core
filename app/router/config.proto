@@ -69,6 +69,18 @@ message GeoSiteList {
   repeated GeoSite entry = 1;
 }
 
+message BalancingSettings{
+  enum Strategy{
+    Random = 0;
+    Fallback = 1;
+  }
+  Strategy strategy = 1;
+}
+
+message StrategySettings{
+  int64 max_attempts = 1;
+}
+
 message RoutingRule {
   oneof target_tag {
     // Tag of outbound that this rule is pointing to.
@@ -124,6 +136,8 @@ message RoutingRule {
 message BalancingRule {
   string tag = 1;
   repeated string outbound_selector = 2;
+  BalancingSettings balancing_settings = 3;
+  StrategySettings strategy_settings = 4;
 }
 
 message Config {
